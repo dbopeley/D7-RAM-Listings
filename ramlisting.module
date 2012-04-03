@@ -1,0 +1,470 @@
+<?php
+/**
+ * @file
+ * Code for the ramlisting feature.
+ */
+
+define( "RAMLISTING_MODULE_PATH", drupal_get_path('module', 'ramlisting') );
+define( "RAMLISTING_CONFIG_PATH", RAMLISTING_MODULE_PATH .'/config' );
+/**
+ * Implements hook_permission().
+ */
+function ramlisting_permission() {
+  return array(
+    'administer ramlisting' => array(
+      'title' => t('Administer RAM MLS Properties'),
+    ),
+    'create ramlisting' => array(
+      'title' => t('Create RAM MLS Properties'),
+    ),
+    'view ramlisting' => array(
+      'title' => t('View RAM MLS Properties'),
+    ),
+    'update ramlisting' => array(
+      'title' => t('Update RAM MLS Properties'),
+    ),
+    'delete ramlisting' => array(
+      'title' => t('Delete RAM MLS Properties'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_filter_default_formats().
+ */
+function ramlisting_filter_default_formats() {
+  $formats = array();
+
+  // Exported format: Plain text
+  $formats['plain_text'] = array(
+    'format' => 'plain_text',
+    'name' => 'Plain text',
+    'cache' => '1',
+    'status' => '1',
+    'weight' => '10',
+    'filters' => array(
+      'filter_html_escape' => array(
+        'weight' => '0',
+        'status' => '1',
+        'settings' => array(),
+      ),
+      'filter_url' => array(
+        'weight' => '1',
+        'status' => '1',
+        'settings' => array(
+          'filter_url_length' => 72,
+        ),
+      ),
+      'filter_autop' => array(
+        'weight' => '2',
+        'status' => '1',
+        'settings' => array(),
+      ),
+    ),
+  );
+
+  return $formats;
+}
+function ramlisting_admin_paths() {
+    $paths = array(
+      'admin/config/content/ramlisting/update' => TRUE, 
+    );
+    return $paths;
+}
+
+function ramlisting_menu() {
+
+	$items['admin/config/content/ramlisting'] = array(
+    'title' => 'RAM MLS settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ramlisting_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer ramlisting'),
+    'description' => 'Configure RAM MLS settings.',
+    'file' => 'ramlisting.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  
+
+	$items['admin/config/content/ramlisting/configure'] = array(
+	  'title' => 'RAM Listings Configuration',
+	  'type' => MENU_DEFAULT_LOCAL_TASK,
+	  'weight' => 10,
+	);
+	
+	
+	$items['admin/config/content/ramlisting/tools'] = array(
+    'title' => 'RAM Listing Tools',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ramlisting_admin_tools'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer ramlisting'),
+    'description' => 'RAM Listing Tools.',
+    'file' => 'ramlisting.tools.inc',
+    'type' => MENU_LOCAL_TASK,
+		'weight' => 20,
+  );
+	
+	
+  $items['admin/config/content/ramlisting/update'] = array(
+    'title' => 'Update Listings',
+    'page callback' => 'ramlisting_execute_update',
+    'access arguments' => array('administer ramlisting'),
+    'type' =>  MENU_CALLBACK,
+  );
+  
+  
+   $items['admin/config/content/ramlisting/purge'] = array(
+    'title' => 'Purge Listings',
+    'page callback' => 'ramlisting_purge_all',
+    'access arguments' => array('administer ramlisting'),
+    'type' =>  MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+
+
+
+function ramlisting_execute_update( $parameters = null )
+{
+
+	
+	include_once(RAMLISTING_MODULE_PATH. '/class.ram.php' );
+	
+	$getlastmls = array();
+	//<key24>$broker_id</key24>
+	$getlastmls['input'] = "<?xml version='1.0' encoding='UTF-8' ?>
+							<rss version='2.0'>
+								<search>
+									<website>gf.btmsites.net</website>
+									<ipaddress>74.205.71.253</ipaddress>
+									<offset>0</offset>
+									<numresults>1</numresults>
+									<orderby>Mls_Num DESC</orderby>
+								</search>
+							</rss>";
+	
+	
+	
+	$offset = variable_get('ramlisting_update_offset', 0 );
+	$per_page = variable_get('ramlisting_update_perpage', 10 );
+	$broker_id = variable_get('ramlisting_broker_id', '20090111180244872857000000' );
+	$order_by = variable_get( 'ramlisting_default_sort_field', 'Mls_Num ASC' );
+		$postdata = array();
+	//<key24>$broker_id</key24>
+		$postdata['input'] = "<?xml version='1.0' encoding='UTF-8' ?>
+							<rss version='2.0'>
+								<search>
+									<website>gf.btmsites.net</website>
+									<ipaddress>74.205.71.253</ipaddress>
+									<offset>$offset</offset>
+									<numresults>$per_page</numresults>
+									<orderby>$order_by</orderby>
+								</search>
+							</rss>";
+		
+
+	$mls_connection_string = variable_get('ramlisting_connection_string', 'http://aspen.interactiveproperties.com/aspenAPI.php' );
+	$mls_image_base = variable_get('ramlisting_image_base', null );
+	$mls_region_id = variable_get('ramlisting_region_id', 'aspen' );
+	
+	
+	$ram = new Ram( $mls_connection_string, $mls_image_base, $mls_region_id );
+	
+	$lastmls = $ram->getLastMls( $getlastmls );
+	$last_mlsnum = key($lastmls);
+//124847
+	$listings = $ram->getUpdateResults( $postdata );
+	$update_count = count($listings);
+	
+	foreach ($listings as $mlsnum => $listing) {
+		$row = db_query('SELECT nid FROM node WHERE title = :mlsnum', array(':mlsnum' => $mlsnum))->fetchField();
+		if(!isset($row['nid'])) {
+		//do insert
+
+				$createdlisting = ramlisting_create_new_listing($listing);
+
+		} else {
+		//do update
+				//$updatedlisting = ramlisting_update_listing($listing);
+		}
+
+		$lastupdated_mlsnum = $listing['title'];
+
+	}
+	
+
+	if($last_mlsnum == $lastupdated_mlsnum){
+		
+		variable_set('ramlisting_update_offset', 0 );
+		
+	}else{
+		
+		$curoffset = variable_get('ramlisting_update_offset', 0 );
+		
+		$newoffset = $curoffset + $per_page;
+		
+		variable_set('ramlisting_update_offset', $newoffset );
+		
+	}
+	variable_set('ramlisting_last_updated_mlsnum', $lastupdated_mlsnum);
+	
+	
+	/*
+	$sql = "select nid, field_property_agent_id_value, field_property_mls_num_value, field_property_md5_value from content_type_property";
+  //echo $sql;
+
+  $rs = db_query( $sql );
+  while($data = db_fetch_object($rs)) {
+    $currentNodes[$data->field_property_mls_num_value] = $data->nid;
+    $md5[$data->nid] = $data->field_property_md5_value;
+  }
+	*/
+	
+	$options = array('fragment' => 'overlay=admin/config/content/ramlisting/tools');
+	 drupal_goto('admin/config/content/ramlisting/tools', $options);
+	
+}
+
+
+function ramlisting_create_new_listing($listing){
+	
+
+	include(RAMLISTING_CONFIG_PATH . '/aspen.config.inc');
+	
+	$listingnode = new stdClass();
+  $listingnode->type = 'ramlisting';
+
+  $listingnode->title    = $listing['title'];
+  $listingnode->language = LANGUAGE_NONE;
+  $listingnode->uid = 1; 
+  $path = 'listing/'.$listing['title'];
+  $listingnode->path = array('alias' => $path);
+  node_object_prepare($listingnode);
+  $fieldfilter = array('title','field_ramlisting_images');
+  foreach ($listing as $fieldname => $fieldcontents) {
+		if(!in_array($fieldname,$fieldfilter)){
+		$listingnode->{$fieldname}[$listingnode->language][0]['value'] = $fieldcontents['fieldvalue'];
+		//$listingnode->{$fieldname}[$listingnode->language][0]['format'] = $fieldcontents['fieldformat'];
+		}
+ 	} 
+  
+
+ 	if(array_key_exists('field_ramlisting_images',$listing)){
+ 		if($listing['field_ramlisting_images']  != ''){
+ 		
+	 		$image_array = explode('-',$listing['field_ramlisting_images']);
+	 		$ctr = 0;
+	 		foreach ($image_array as $image) {
+
+	 			if(strpos( $image, 'thumb') === FALSE){// we arent storing thumbs
+	 				$image_stored = ramlisting_store_image($image);
+	 				
+	 				//kpr($image_stored);
+	 				
+		 			if(is_object($image_stored)){
+		 				
+		 				//kpr($image_stored->uri);
+		 	
+		 				$file_path = drupal_realpath($image_stored->uri); // Create a File object
+						$file_name = $image_stored->filename;
+ 
+						// Create managed File object and associate with file field.
+						$file = new StdClass();
+						$file->uid = 1;
+						$file->uri = $file_path;
+						$file->filename = $file_name;
+						$file->filemime = file_get_mimetype($file->uri);
+						$file->status = 1;      
+						
+						$dest = file_default_scheme() . '://ramlisting/images/'.$file_name; // Subdirectory name within files directory. ($dest is optional.)
+						
+						//kpr($dest);
+						$file = file_copy($file, $dest, FILE_EXISTS_RENAME);
+						
+						$file->display = 1;
+						$file->description = "";
+						      
+						//$node->field_my_files['und'][0] = (array)$file;//the name of the field that requires the files
+						$listingnode->ramlisting_images['und'][$ctr] = (array)$file;										
+		 				$ctr++;
+	
+		 			}
+		 			
+	 			}
+	 		}
+ 		}
+ 	}
+  //geo code
+  
+//kpr($listing);
+  $locationsvalues = array();
+  $locationsconfig = array(
+  'field_ramlisting_address'=>'street', 
+  'field_ramlisting_city'=>'city',
+  'field_ramlisting_state'=> 'province',
+  'field_ramlisting_zip'=> 'postal_code',
+  //'field_ramlisting_lat'=>'latitude',
+  //'field_ramlisting_lon'=>'longitude', 
+  );
+  
+  foreach ($locationsconfig as $listingfield => $locationfield) {
+  	if(array_key_exists($listingfield, $listingnode)){
+  		$locationsvalues[0][$locationfield] = $listing[$listingfield]['fieldvalue'];
+  	}
+  }
+  
+
+ 
+
+  node_save($listingnode);
+
+  
+	
+  if($listingnode->nid){
+  	$criteria = array(
+			'nid' => $listingnode->nid,
+			'vid' => $listingnode->vid,
+			'genid' => 'ramlisting',
+  	);
+  	location_save_locations( $locationsvalues , $criteria );
+  	return true;
+  }else{
+  	return false;
+  }
+  
+}
+
+function ramlisting_update_listing($listing){
+	
+	
+}
+
+function ramlisting_store_image($image) {
+ 
+ 
+  	$imagebase = variable_get('ramlisting_imagebase', NULL);
+    $imageURL = $imagebase.$image;
+
+
+    $imagetoupload = file_get_contents($imageURL); // string
+		$uploadedimage = file_save_data($imagetoupload, 'public://'.$image, FILE_EXISTS_REPLACE);
+		//$uploadedimage = file_unmanaged_save_data($imagetoupload, 'public://'.$image, FILE_EXISTS_REPLACE);
+
+    return $uploadedimage;
+}
+
+
+
+function ramlisting_geo_code (&$node, &$csv) {
+
+    $locationString = $csv['Address'] . ',' . $csv['City'] . ',' . $csv['State'] . ',' . $csv['Zip'];
+
+    // Apply the location, only going to do this if the location string
+    // has changed
+    //$data  = urlencode( "100 Beaver Creek Blvd Avon, CO 81620" );
+    //$url   = 'http://maps.google.com/maps/geo?output=xml&key='. 'AIzaSyD-iALb603itH3eNCcD6SkSMqEPEmXUweg' .'&q=' .$data;
+    //$reply = drupal_http_request( $url );
+    //print_r( $reply );
+    //exit;
+
+    /*
+      Compare are node's location with address string. If it's the same
+      skip setting the location
+    */
+    $loc = $node->location;
+    $nodeString = $loc['street'] . ',' . $loc['city'] . ',' . $loc['province'] . ',' . $loc['postal_code'];
+
+    if ($locationString == $nodeString) {
+      //echo "skip node location $node->nid\n";
+      return;
+    }
+
+    $defaultCountry = 'us';
+    /*
+      Would we really translate things like country code?  Or even addresses,
+      cities, states?
+    */
+    $locations = array (
+      array (
+        'street'      => $csv['Address'], // Address
+        'additional'  => '',
+        'city'        => $csv['City'], // City
+        'province'    => location_province_code($defaultCountry, $csv['State']), // State
+        'postal_code' => $csv['Zip'],  // Zip
+        'country'     => $defaultCountry,
+        'latitude'    => '',
+        'longitude'   => '',
+        'phone'       => $csv['Office_Phone'],  // Office_Phone?
+        'fax'         => ''
+      )
+    );
+    $node->locations = $locations;
+}
+
+
+/**
+ * Implements hook_uninstall().
+ *
+ * This hook is called when the user not only has disabled the module,
+ * but also uninstalls it from the 'uninstall' tab in the module page.
+ *
+ * So it's a perfect time to remove our fields and instances and new
+ * node type from the database.
+ *
+ * @ingroup node_example
+ */
+function ramlisting_purge_all() {
+  // Gather all the example content that might have been created while this
+  // module was enabled.  Simple selects still use db_query().
+  // http://api.drupal.org/api/function/db_query/7
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'ramlisting'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once
+  // http://api.drupal.org/api/function/node_delete_multiple/7
+  //kpr($nids);
+  if(count($nids)){
+  node_delete_multiple($nids);
+  }
+
+  // Loop over each of the fields defined by this module and delete
+  // all instances of the field, their data, and the field itself.
+  // http://api.drupal.org/api/function/field_delete_field/7
+ 	$current_config_files = variable_get('ramlisting_config_files', NULL);
+  
+			$feed_path = RAMLISTING_CONFIG_PATH.'/'.$current_config_files;
+			include($feed_path);
+    //kpr($custom_fields);
+  foreach (array_keys($custom_fields) as $field) {
+    field_delete_field($field);
+  }
+
+  // Loop over any remaining field instances attached to the ramlisting
+  // content type and delete them individually.
+  // http://api.drupal.org/api/function/field_delete_field/7
+  $instances = field_info_instances('node', 'ramlisting');
+   // kpr($instances);
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete our content type
+  // http://api.drupal.org/api/function/node_type_delete/7
+  //node_type_delete('ramlisting');
+
+  // Purge all field infromation
+  // http://api.drupal.org/api/function/field_purge_batch/7
+  field_purge_batch(1000);
+  	$options = array('fragment' => 'overlay=admin/config/content/ramlisting/tools');
+	 drupal_goto('admin/config/content/ramlisting/tools', $options);
+}

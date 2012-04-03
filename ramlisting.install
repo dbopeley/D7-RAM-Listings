@@ -1,0 +1,349 @@
+ <?php
+
+function ramlisting_install() {
+  // get the translation function relevant to our current localisation
+  $t = get_t();
+  // define the content type as an array (same as in hook_node_info())
+  $ramlisting_type = array(
+    'type' => 'ramlisting',
+    'name' => $t('ramlisting'),
+    'base' => 'node_content',
+    'description' => $t('Content type receptical for imported MLS data from RAM.'),
+    'title_label' => $t('MLS Number'),
+    'promote' => 0,
+    'status' => 1,
+    'comment' => 0,
+  );
+
+  // set default values for anything not explicitly defined in the above array
+  $content_type = node_type_set_defaults($ramlisting_type);
+
+  // add the body field to the content type
+	//node_add_body_field($content_type, 'Body');
+
+  // create the content type
+  node_type_save($content_type);
+
+  //variable_set('node_options_ramlisting', array('status'));
+  // hide comments for this node. http://api.drupal.org/api/drupal/modules--comment--comment.module/7
+ variable_set('comment_ramlisting', 'COMMENT_NODE_HIDDEN');
+
+  // Hide date and author information
+ variable_set('node_submitted_ramlisting', FALSE);
+
+  // Create all the fields we are adding to our content type.
+  // http://api.drupal.org/api/function/field_create_field/7
+  foreach (_ramlisting_installed_fields() as $field) {
+    field_create_field($field);
+  }
+
+  // Create all the instances for our fields.
+  // http://api.drupal.org/api/function/field_create_instance/7
+  foreach (_ramlisting_installed_instances() as $instance) {
+    $instance['entity_type'] = 'node';
+    $instance['bundle'] = 'ramlisting';
+    field_create_instance($instance);
+  }
+
+  // adjust the weight so it's called after a dependant module called 'categories'
+  $weight = db_query("SELECT weight FROM {system} WHERE name = :name", array(':name' => 'categories'))->fetchField();
+  db_update('system')->fields(array(
+    'weight' => $weight + 1,
+  ))
+  ->condition('name', 'ramlisting')
+  ->execute();
+}
+
+
+function _ramlisting_installed_fields() {
+  $t = get_t();
+  $fields = array(
+    // text field
+    'ramlisting_price' => array(
+      'field_name'   => 'ramlisting_price',
+      'label'        => $t('Asking Price'),
+      'cardinality'  => 1,
+      'type'         => 'number_decimal',
+      'settings'     => array(
+        'decimal_separator' => '.',
+        'precision' => 10,
+        'scale' => 2,
+      ),
+    ),
+    
+    'ramlisting_address' => array(
+      'field_name'   => 'ramlisting_address',
+      'label'        => $t('Address'),
+      'cardinality'  => 1,
+      'type'         => 'text',
+      'settings'     => array(
+        'max_length'  => 225,
+      ),
+    ),
+    
+    
+   'ramlisting_city' => array(
+      'field_name'   => 'ramlisting_city',
+      'label'        => $t('City'),
+      'cardinality'  => 1,
+      'type'         => 'text',
+      'settings'     => array(
+        'max_length'  => 225,
+      ),
+    ),
+    
+   'ramlisting_state' => array(
+      'field_name'   => 'ramlisting_state',
+      'label'        => $t('State'),
+      'cardinality'  => 1,
+      'type'         => 'text',
+      'settings'     => array(
+        'max_length'  => 64,
+      ),
+    ),
+    
+
+   'ramlisting_zip' => array(
+      'field_name'   => 'ramlisting_zip',
+      'label'        => $t('Zip'),
+      'cardinality'  => 1,
+      'type'         => 'text',
+      'settings'     => array(
+        'max_length'  => 16,
+      ),
+    ),
+ 
+        // image field
+    'ramlisting_images' => array(
+      'field_name' => 'ramlisting_images',
+      'label' => $t('Image'),
+      'cardinality' => -1,
+      'type' => 'image',
+      'settings' => array(
+        'default_image' => 0,
+        'uri_scheme' => 'public',
+      ),
+    ),
+
+  
+'ramlisting_featured' => array(
+      'field_name' => 'ramlisting_featured',
+      'type' => 'list_boolean',
+      'cardinality' => 1,
+      'settings' => array(
+        // Make sure that 0 works as a 'on' value'.
+        'allowed_values' => array(1 => 'Zero', 0 => 'Some <script>dangerous</script> & unescaped <strong>markup</strong>'),
+      ),   
+     ),
+    );
+  
+  return $fields;
+}
+
+
+function _ramlisting_installed_instances() {
+  $t = get_t();
+  $instances = array(
+    // instance of the image field above
+ 		'ramlisting_price' => array(
+      'field_name'  => 'ramlisting_price',
+      'label'       => $t('Asking Price'),
+      'required' => 0,
+      'cardinality' => 1,
+      'widget' => array(
+        'active' => 0,
+        'module' => 'number',
+        'settings' => array(),
+        'type' => 'number',
+        'weight' => '1',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'number',
+          'settings' => array(
+            'decimal_separator' => '.',
+            'prefix_suffix' => TRUE,
+            'scale' => 2,
+            'thousand_separator' => ' ',
+          ),
+          'type' => 'number_decimal',
+          'weight' => 1,
+        ),
+        'teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
+      ),
+    ),
+    
+    
+   'ramlisting_address' => array(
+      'field_name'  => 'ramlisting_address',
+      'label'       => $t('Address'),
+      'cardinality' => 1,
+      'widget'      => array(
+        'type'       => 'text_textfield',
+        'settings'   => array('size' => 60),
+      ),
+    ),
+    
+    
+   'ramlisting_city' => array(
+      'field_name'  => 'ramlisting_city',
+      'label'       => $t('City'),
+      'cardinality' => 1,
+      'widget'      => array(
+        'type'       => 'text_textfield',
+        'settings'   => array('size' => 60),
+      ),
+    ),
+    
+   'ramlisting_state' => array(
+      'field_name'  => 'ramlisting_state',
+      'label'       => $t('Address'),
+      'cardinality' => 1,
+      'widget'      => array(
+        'type'       => 'text_textfield',
+        'settings'   => array('size' => 60),
+      ),
+    ),
+    
+   'ramlisting_zip' => array(
+      'field_name'  => 'ramlisting_zip',
+      'label'       => $t('Zip'),
+      'cardinality' => 1,
+      'widget'      => array(
+        'type'       => 'text_textfield',
+        'settings'   => array('size' => 60),
+      ),
+    ),
+    
+/**/
+    
+        // instance of the image field above
+    'ramlisting_images' => array(
+      'field_name' => 'ramlisting_images',
+      'label' => $t('Images'),
+      'cardinality' => -1,
+
+      'settings' => array(
+        'alt_field' => 1,
+        'file_directory' => 'image',
+        'file_extensions' => 'png gif jpg jpeg',
+        'max_filesize' => '',
+        'max_resolution' => '',
+        'min_resolution' => '',
+        'title_field' => 1,
+        'user_register_form' => FALSE,
+      ),
+      'widget' => array(
+        'settings' => array(
+          'preview_image_style' => 'thumbnail',
+          'progress_indicator' => 'throbber',
+        ),
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'image',
+          'settings' => array('image_style' => '', 'image_link' => ''),
+          'weight' => -1,
+        ),
+        'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'image',
+          'settings' => array('image_style' => 'thumbnail', 'image_link' => 'content'),
+          'weight' => -1,
+        ),
+      ),
+    ),
+    
+    'ramlisting_featured' => array(
+      'field_name' => 'ramlisting_featured',
+ 			'label'       => $t('Listing is Featured'),
+      'widget' => array(
+      'type' => 'options_onoff',
+      ),
+    ),
+
+
+    
+    
+  );
+  return $instances;
+}
+
+
+
+/**
+* Implementation of hook_uninstall().
+*/
+function ramlisting_uninstall() {
+
+
+  // Gather all the example content that might have been created while this
+  // module was enabled.  Simple selects still use db_query().
+  // http://api.drupal.org/api/function/db_query/7
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'ramlisting'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once
+  // http://api.drupal.org/api/function/node_delete_multiple/7
+  //kpr($nids);
+  if(count($nids)){
+  node_delete_multiple($nids);
+  }
+
+  // Loop over each of the fields defined by this module and delete
+  // all instances of the field, their data, and the field itself.
+  // http://api.drupal.org/api/function/field_delete_field/7
+  $base_fields_delete = _ramlisting_installed_fields();
+
+  $current_customfields_delete = variable_get('ramlisting_customfields_delete', NULL);
+  if($current_customfields_delete){
+  	$fields_to_delete = array_merge($base_fields_delete, $current_customfields_delete);
+  }else{
+  	$fields_to_delete  = $base_fields_delete;
+  }
+
+	  foreach (array_keys($fields_to_delete) as $field) {
+	    field_delete_field($field);
+	  }
+	  
+
+
+
+  // Loop over any remaining field instances attached to the ramlisting
+  // content type and delete them individually.
+  // http://api.drupal.org/api/function/field_delete_field/7
+  $instances = field_info_instances('node', 'ramlisting');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete our content type
+  // http://api.drupal.org/api/function/node_type_delete/7
+  node_type_delete('ramlisting');
+
+  // Purge all field infromation
+  // http://api.drupal.org/api/function/field_purge_batch/7
+  field_purge_batch(1000);
+
+  
+  variable_del('ramlisting_config_file');
+  variable_del('ramlisting_imagebase');
+  variable_del('ramlisting_feeduri');
+  variable_del('ramlisting_mlsarea');
+  variable_del('ramlisting_customfields_delete');
+  variable_del('ramlisting_update_perpage');
+  variable_del('ramlisting_last_updated_mlsnum');
+  variable_del('ramlisting_update_offset');
+
+}
