@@ -7,9 +7,6 @@
 
 function ramlisting_admin_settings($form_state) {
 
-
-	
-	
   $form['ramlisting_config_fs'] = array(
     '#type'        => 'fieldset',
     '#title'       => t('RAM MLS Feed and Field Mapping Configuration'),
@@ -17,10 +14,8 @@ function ramlisting_admin_settings($form_state) {
     '#collapsed'   => FALSE
   );
   
-
   $field_config_files = file_scan_directory(RAMLISTING_CONFIG_PATH,'/.*\.inc$/');
    
-
   $ram_field_mapping_file_options = array();
   $fileoptions['Select an Area'] = 'Select an Area';
   foreach ($field_config_files as $fileitem) {
@@ -38,10 +33,6 @@ function ramlisting_admin_settings($form_state) {
 
   $curconfigfile = variable_get('ramlisting_config_file', null);
     
-
-
-
-
   if($curconfigfile){
 		$curfilescopy = 'The following MLS area is currently in use:<br />';
 $curfilescopy .= "<br /><b>$curconfigfile</b><br /><br />";

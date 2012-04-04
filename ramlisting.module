@@ -273,34 +273,14 @@ function ramlisting_create_new_listing($listing){
 
 	 			if(strpos( $image, 'thumb') === FALSE){// we arent storing thumbs
 	 				$image_stored = ramlisting_store_image($image);
-	 				
-	 				//kpr($image_stored);
-	 				
+
 		 			if(is_object($image_stored)){
-		 				
-		 				//kpr($image_stored->uri);
-		 	
-		 				$file_path = drupal_realpath($image_stored->uri); // Create a File object
-						$file_name = $image_stored->filename;
- 
-						// Create managed File object and associate with file field.
-						$file = new StdClass();
-						$file->uid = 1;
-						$file->uri = $file_path;
-						$file->filename = $file_name;
-						$file->filemime = file_get_mimetype($file->uri);
-						$file->status = 1;      
-						
-						$dest = file_default_scheme() . '://ramlisting/images/'.$file_name; // Subdirectory name within files directory. ($dest is optional.)
-						
-						//kpr($dest);
-						$file = file_copy($file, $dest, FILE_EXISTS_RENAME);
-						
-						$file->display = 1;
-						$file->description = "";
+
+						$image_stored->display = 1;
+						$image_stored->description = "";
 						      
 						//$node->field_my_files['und'][0] = (array)$file;//the name of the field that requires the files
-						$listingnode->ramlisting_images['und'][$ctr] = (array)$file;										
+						$listingnode->field_ramlisting_images['und'][$ctr] = (array)$image_stored;										
 		 				$ctr++;
 	
 		 			}
@@ -328,13 +308,10 @@ function ramlisting_create_new_listing($listing){
   	}
   }
   
-
- 
-
+  
+  
   node_save($listingnode);
 
-  
-	
   if($listingnode->nid){
   	$criteria = array(
 			'nid' => $listingnode->nid,
@@ -371,7 +348,10 @@ function ramlisting_store_image($image) {
 
 
     $imagetoupload = file_get_contents($imageURL); // string
-		$uploadedimage = file_save_data($imagetoupload, 'public://'.$image, FILE_EXISTS_REPLACE);
+    // Subdirectory name within files directory. 
+    $dest = file_default_scheme() . '://ramlisting/images/'.$image; 
+    
+		$uploadedimage = file_save_data($imagetoupload, $dest, FILE_EXISTS_REPLACE);
 		//$uploadedimage = file_unmanaged_save_data($imagetoupload, 'public://'.$image, FILE_EXISTS_REPLACE);
 
     return $uploadedimage;

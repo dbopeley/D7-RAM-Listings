@@ -322,9 +322,6 @@ function ramlisting_uninstall() {
 
   foreach (array_keys($fields_to_delete) as $field) {
     field_delete_field($field);
-    if($field['type'] == 'image'){
-			// need to delete manage image files
-    }
   }
 	  
   // Loop over any remaining field instances attached to the ramlisting
