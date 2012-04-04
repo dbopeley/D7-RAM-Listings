@@ -126,18 +126,27 @@ function ramlisting_menu() {
   return $items;
 }
 
+/**
+ * Implement hook_cron().
+ */
+function ramlisting_cron() {
+	$is_cron = true;
+	//ramlisting_execute_update($is_cron);
+
+}
 
 
-
-
-function ramlisting_execute_update( $parameters = null )
+function ramlisting_execute_update( $is_cron = false)
 {
 
 	
 	include_once(RAMLISTING_MODULE_PATH. '/class.ram.php' );
 	
+	/* build xml request to return all properties
+	** the result reurned will be used to calculate the total 
+	** number of properties available in MLS
+	*/
 	$getlastmls = array();
-	//<key24>$broker_id</key24>
 	$getlastmls['input'] = "<?xml version='1.0' encoding='UTF-8' ?>
 							<rss version='2.0'>
 								<search>
@@ -175,10 +184,15 @@ function ramlisting_execute_update( $parameters = null )
 	
 	
 	$ram = new Ram( $mls_connection_string, $mls_image_base, $mls_region_id );
-	
+	/*
+	* find last MLS number in entire list of properties
+	* by performing a search returning a single property
+	* which is the last property in entire list because we order by MLS numbe DESC
+	* this MLS number is used to flag the update/cron process to reset the offset 
+	* back to 0 once we have reached the end of MLSs in entire list
+	*/
 	$lastmls = $ram->getLastMls( $getlastmls );
 	$last_mlsnum = key($lastmls);
-//124847
 	$listings = $ram->getUpdateResults( $postdata );
 	$update_count = count($listings);
 	
@@ -191,7 +205,9 @@ function ramlisting_execute_update( $parameters = null )
 
 		} else {
 		//do update
-				//$updatedlisting = ramlisting_update_listing($listing);
+				
+				$nid = $row['nid'];
+				//$updatedlisting = ramlisting_update_listing($listing, $nid);
 		}
 
 		$lastupdated_mlsnum = $listing['title'];
@@ -215,26 +231,19 @@ function ramlisting_execute_update( $parameters = null )
 	variable_set('ramlisting_last_updated_mlsnum', $lastupdated_mlsnum);
 	
 	
-	/*
-	$sql = "select nid, field_property_agent_id_value, field_property_mls_num_value, field_property_md5_value from content_type_property";
-  //echo $sql;
 
-  $rs = db_query( $sql );
-  while($data = db_fetch_object($rs)) {
-    $currentNodes[$data->field_property_mls_num_value] = $data->nid;
-    $md5[$data->nid] = $data->field_property_md5_value;
-  }
-	*/
-	
+	if(!$is_cron){
 	$options = array('fragment' => 'overlay=admin/config/content/ramlisting/tools');
 	 drupal_goto('admin/config/content/ramlisting/tools', $options);
+	}
 	
 }
 
 
 function ramlisting_create_new_listing($listing){
 	
-
+	//kpr($listing); exit;
+	
 	include(RAMLISTING_CONFIG_PATH . '/aspen.config.inc');
 	
 	$listingnode = new stdClass();
@@ -309,8 +318,8 @@ function ramlisting_create_new_listing($listing){
   'field_ramlisting_city'=>'city',
   'field_ramlisting_state'=> 'province',
   'field_ramlisting_zip'=> 'postal_code',
-  //'field_ramlisting_lat'=>'latitude',
-  //'field_ramlisting_lon'=>'longitude', 
+  'field_ramlisting_lat'=>'latitude',
+ 	'field_ramlisting_lon'=>'longitude', 
   );
   
   foreach ($locationsconfig as $listingfield => $locationfield) {
@@ -340,9 +349,18 @@ function ramlisting_create_new_listing($listing){
   
 }
 
-function ramlisting_update_listing($listing){
-	
-	
+function ramlisting_update_listing($listing, $nid){
+	$listingnode = node_load($nid);
+	  $fieldfilter = array('title','field_ramlisting_images');
+  foreach ($listing as $fieldname => $fieldcontents) {
+		if(!in_array($fieldname,$fieldfilter)){
+			
+			$curval = $listingnode->{$fieldname};
+			if($curval != $fieldcontents['fieldvalue']){
+				$listingnode->{$fieldname}[$listingnode->language][0]['value'] = $fieldcontents['fieldvalue'];
+			}
+		}
+ 	}
 }
 
 function ramlisting_store_image($image) {

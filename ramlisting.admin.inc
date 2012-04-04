@@ -133,10 +133,10 @@ function ramlisting_admin_settings_submit($form, &$form_state) {
 			$feed_path_add = RAMLISTING_CONFIG_PATH.'/'.$submitted_config_file;
 			include_once($feed_path_add);
 			
-			
+			variable_del('ramlisting_connection_string');
 			variable_set('ramlisting_imagebase',$config['imagebase'] );
-  		variable_set('ramlisting_feeduri', $config['feeduri']);
   		variable_set('ramlisting_mlsarea', $config['area']);
+  		variable_set('ramlisting_connection_string', $config['conx']);
   		variable_set('ramlisting_customfields_delete',$custom_fields_delete);
 
 			$fieldscreated = ramlisting_create_fields($custom_fields);

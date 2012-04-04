@@ -24,7 +24,7 @@ function ramlisting_install() {
   // create the content type
   node_type_save($content_type);
 
-  //variable_set('node_options_ramlisting', array('status'));
+ variable_set('node_options_ramlisting', array('status'));
   // hide comments for this node. http://api.drupal.org/api/drupal/modules--comment--comment.module/7
  variable_set('comment_ramlisting', 'COMMENT_NODE_HIDDEN');
 
@@ -52,6 +52,13 @@ function ramlisting_install() {
   ))
   ->condition('name', 'ramlisting')
   ->execute();
+  
+  $path = file_default_scheme() . '://ramlisting/images';
+  
+  if (!file_prepare_directory($path)) {
+    drupal_mkdir($path, 0775 , TRUE);
+  }
+
 }
 
 
@@ -59,8 +66,8 @@ function _ramlisting_installed_fields() {
   $t = get_t();
   $fields = array(
     // text field
-    'ramlisting_price' => array(
-      'field_name'   => 'ramlisting_price',
+    'field_ramlisting_price' => array(
+      'field_name'   => 'field_ramlisting_price',
       'label'        => $t('Asking Price'),
       'cardinality'  => 1,
       'type'         => 'number_decimal',
@@ -71,8 +78,8 @@ function _ramlisting_installed_fields() {
       ),
     ),
     
-    'ramlisting_address' => array(
-      'field_name'   => 'ramlisting_address',
+    'field_ramlisting_address' => array(
+      'field_name'   => 'field_ramlisting_address',
       'label'        => $t('Address'),
       'cardinality'  => 1,
       'type'         => 'text',
@@ -82,8 +89,8 @@ function _ramlisting_installed_fields() {
     ),
     
     
-   'ramlisting_city' => array(
-      'field_name'   => 'ramlisting_city',
+   'field_ramlisting_city' => array(
+      'field_name'   => 'field_ramlisting_city',
       'label'        => $t('City'),
       'cardinality'  => 1,
       'type'         => 'text',
@@ -92,8 +99,8 @@ function _ramlisting_installed_fields() {
       ),
     ),
     
-   'ramlisting_state' => array(
-      'field_name'   => 'ramlisting_state',
+   'field_ramlisting_state' => array(
+      'field_name'   => 'field_ramlisting_state',
       'label'        => $t('State'),
       'cardinality'  => 1,
       'type'         => 'text',
@@ -103,8 +110,8 @@ function _ramlisting_installed_fields() {
     ),
     
 
-   'ramlisting_zip' => array(
-      'field_name'   => 'ramlisting_zip',
+   'field_ramlisting_zip' => array(
+      'field_name'   => 'field_ramlisting_zip',
       'label'        => $t('Zip'),
       'cardinality'  => 1,
       'type'         => 'text',
@@ -114,8 +121,8 @@ function _ramlisting_installed_fields() {
     ),
  
         // image field
-    'ramlisting_images' => array(
-      'field_name' => 'ramlisting_images',
+    'field_ramlisting_images' => array(
+      'field_name' => 'field_ramlisting_images',
       'label' => $t('Image'),
       'cardinality' => -1,
       'type' => 'image',
@@ -126,13 +133,13 @@ function _ramlisting_installed_fields() {
     ),
 
   
-'ramlisting_featured' => array(
-      'field_name' => 'ramlisting_featured',
+	'field_ramlisting_featured' => array(
+      'field_name' => 'field_ramlisting_featured',
       'type' => 'list_boolean',
       'cardinality' => 1,
       'settings' => array(
         // Make sure that 0 works as a 'on' value'.
-        'allowed_values' => array(1 => 'Zero', 0 => 'Some <script>dangerous</script> & unescaped <strong>markup</strong>'),
+        'allowed_values' => array(1 => 'Yes', 0 => ''),
       ),   
      ),
     );
@@ -145,8 +152,8 @@ function _ramlisting_installed_instances() {
   $t = get_t();
   $instances = array(
     // instance of the image field above
- 		'ramlisting_price' => array(
-      'field_name'  => 'ramlisting_price',
+ 		'field_ramlisting_price' => array(
+      'field_name'  => 'field_ramlisting_price',
       'label'       => $t('Asking Price'),
       'required' => 0,
       'cardinality' => 1,
@@ -180,8 +187,8 @@ function _ramlisting_installed_instances() {
     ),
     
     
-   'ramlisting_address' => array(
-      'field_name'  => 'ramlisting_address',
+   'field_ramlisting_address' => array(
+      'field_name'  => 'field_ramlisting_address',
       'label'       => $t('Address'),
       'cardinality' => 1,
       'widget'      => array(
@@ -191,8 +198,8 @@ function _ramlisting_installed_instances() {
     ),
     
     
-   'ramlisting_city' => array(
-      'field_name'  => 'ramlisting_city',
+   'field_ramlisting_city' => array(
+      'field_name'  => 'field_ramlisting_city',
       'label'       => $t('City'),
       'cardinality' => 1,
       'widget'      => array(
@@ -201,8 +208,8 @@ function _ramlisting_installed_instances() {
       ),
     ),
     
-   'ramlisting_state' => array(
-      'field_name'  => 'ramlisting_state',
+   'field_ramlisting_state' => array(
+      'field_name'  => 'field_ramlisting_state',
       'label'       => $t('Address'),
       'cardinality' => 1,
       'widget'      => array(
@@ -211,8 +218,8 @@ function _ramlisting_installed_instances() {
       ),
     ),
     
-   'ramlisting_zip' => array(
-      'field_name'  => 'ramlisting_zip',
+   'field_ramlisting_zip' => array(
+      'field_name'  => 'field_ramlisting_zip',
       'label'       => $t('Zip'),
       'cardinality' => 1,
       'widget'      => array(
@@ -224,8 +231,8 @@ function _ramlisting_installed_instances() {
 /**/
     
         // instance of the image field above
-    'ramlisting_images' => array(
-      'field_name' => 'ramlisting_images',
+    'field_ramlisting_images' => array(
+      'field_name' => 'field_ramlisting_images',
       'label' => $t('Images'),
       'cardinality' => -1,
 
@@ -261,8 +268,8 @@ function _ramlisting_installed_instances() {
       ),
     ),
     
-    'ramlisting_featured' => array(
-      'field_name' => 'ramlisting_featured',
+    'field_ramlisting_featured' => array(
+      'field_name' => 'field_ramlisting_featured',
  			'label'       => $t('Listing is Featured'),
       'widget' => array(
       'type' => 'options_onoff',
@@ -298,7 +305,7 @@ function ramlisting_uninstall() {
   // http://api.drupal.org/api/function/node_delete_multiple/7
   //kpr($nids);
   if(count($nids)){
-  node_delete_multiple($nids);
+  	node_delete_multiple($nids);
   }
 
   // Loop over each of the fields defined by this module and delete
@@ -313,13 +320,13 @@ function ramlisting_uninstall() {
   	$fields_to_delete  = $base_fields_delete;
   }
 
-	  foreach (array_keys($fields_to_delete) as $field) {
-	    field_delete_field($field);
-	  }
+  foreach (array_keys($fields_to_delete) as $field) {
+    field_delete_field($field);
+    if($field['type'] == 'image'){
+			// need to delete manage image files
+    }
+  }
 	  
-
-
-
   // Loop over any remaining field instances attached to the ramlisting
   // content type and delete them individually.
   // http://api.drupal.org/api/function/field_delete_field/7
@@ -345,5 +352,5 @@ function ramlisting_uninstall() {
   variable_del('ramlisting_update_perpage');
   variable_del('ramlisting_last_updated_mlsnum');
   variable_del('ramlisting_update_offset');
-
+	variable_del('ramlisting_connection_string');
 }

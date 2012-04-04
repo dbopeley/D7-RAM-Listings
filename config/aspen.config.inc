@@ -301,13 +301,13 @@ $custom_fields = array(
 
 'field_ramlisting_yearbuilt' => array(
 	'field_label'=>'Year Built',
-	'field_type'=>'number_integer',
-	'widget_type'=>'number',), //int(11)
+	'field_type'=>'text',
+	'widget_type'=>'text_textfield',), //varchar(50)
 	
 'field_ramlisting_yearremodeled' => array(
-'field_label'=>'Year Remodeled',
-'field_type'=>'number_integer',
-'widget_type'=>'number',), //int(11)
+	'field_label'=>'Year Remodeled',
+	'field_type'=>'text',
+	'widget_type'=>'text_textfield',), //varchar(50)
 
 'field_ramlisting_bldg2sqft' => array(
 	'field_label'=>'Building 2 Sqft.',
@@ -368,8 +368,8 @@ $custom_fields = array(
 
 'field_ramlisting_taxes1yr' => array(
 	'field_label'=>'Taxes 1 Year', 
-	'field_type'=>'number_integer', 
-	'widget_type'=>'number',), //int(11)
+	'field_type'=>'text',
+	'widget_type'=>'text_textfield',), //varchar(50)
 
 'field_ramlisting_taxes2' => array(
 	'field_label'=>'Taxes 2',
@@ -378,8 +378,8 @@ $custom_fields = array(
 
 'field_ramlisting_taxes2yr' => array(
 	'field_label'=>'Taxes 2 Year',
-	'field_type'=>'number_integer',
-	'widget_type'=>'number',), //int(11)
+	'field_type'=>'text',
+	'widget_type'=>'text_textfield',), //varchar(50)
 
 'field_ramlisting_taxesper' => array(
 	'field_label'=>'Taxes Per',
@@ -464,17 +464,13 @@ $custom_fields = array(
 	
 'field_ramlisting_lat' => array(
 	'field_label'=>'Latitude',
-	'field_type'=>'number_float',
-	'precision' => 24,
-	'scale' => 20,
-	'widget_type'=>'number',), //varchar(30)
+	'field_type'=>'text',
+	'widget_type'=>'text_textfield',), //varchar(30)
 	
 'field_ramlisting_lon' => array(
 	'field_label'=>'Longitude',
-	'field_type'=>'number_float',
-	'precision' => 24,
-	'scale' => 20,
-	'widget_type'=>'number',), //varchar(30)
+	'field_type'=>'text',
+	'widget_type'=>'text_textfield',), //varchar(30)
 
 'field_ramlisting_foreclosure' => array(
 	'field_label'=>'Foreclosure',
@@ -491,11 +487,6 @@ $custom_fields = array(
 	'field_type'=>'text',
 	'widget_type'=>'text_textfield',), //varchar(30)
 
-	
-
-	
-	
-	
 	
 /* **deprecated
 'field_ramlisting_officeid2' => array(
@@ -520,7 +511,7 @@ $custom_fields = array(
 	);
 
 $config = array(
-    'feeduri'=> 'http://aspen.interactiveproperties.com/aspenAPI.php',
+    'conx'=> 'http://aspen.interactiveproperties.com/aspenAPI.php',
     'imagebase' =>'http://aspen.interactiveproperties.com/images/listings/aspen',
     'area' => 'aspen'
   );
@@ -603,9 +594,4 @@ $custom_fields_delete = array(
 'field_ramlisting_foreclosure' => 'field_ramlisting_foreclosure', //varchar(30)
 'field_ramlisting_shortsale' => 'field_ramlisting_shortsale', //varchar(30)
 'field_ramlisting_reo' => 'field_ramlisting_reo',
-	
-
-
-	);
-					
-			
+);	

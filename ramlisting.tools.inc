@@ -55,9 +55,3 @@ return $form;
    
 }
 
-
-function features_export_build_form_submit($form, &$form_state) {
-	
-	kpr($form_state);
-
-}
