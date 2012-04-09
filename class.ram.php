@@ -261,11 +261,8 @@ class Ram
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $paramaters );
 		$results = curl_exec($ch); 
 		curl_close($ch);			
-		
 		$resultsxml = simplexml_load_string( $results );	
-		
 		$properties = $this->getNormalizedData( $resultsxml );
-
 		return $properties;
 	}
 	

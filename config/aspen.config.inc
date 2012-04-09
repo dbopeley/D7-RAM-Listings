@@ -29,16 +29,16 @@ $type_options = array(
 	
 	
 $bedroom_options = array(
-	'Studio' => 'Studio',
-	'One' => 'One',
-	'Two' => 'Two',
-	'Three' => 'Three',
-	'Four' => 'Four',
-	'Five' => 'Five',
-	'Six' => 'Six',
-	'Seven' => 'Seven',
-	'Eight' => 'Eight',
-	'Nine Or More' => 'Nine Or More',
+	0 => 'Studio',
+	1 => 'One',
+	2 => 'Two',
+	3 => 'Three',
+	4 => 'Four',
+	5 => 'Five',
+	6 => 'Six',
+	7 => 'Seven',
+	8 => 'Eight',
+	9 => 'Nine Or More',
 	);
 	
 	
@@ -82,7 +82,7 @@ $field_map = array(
 'key18' => array('fieldname'=>'field_ramlisting_basement','fieldformat' => ''), //varchar(30)
 'key19' => array('fieldname'=>'field_ramlisting_condition','fieldformat' => ''), //varchar(30)
 'key20' => array('fieldname'=>'field_ramlisting_reservations','fieldformat' => ''), //enum('Yes','No')
-'key21' => array('fieldname'=>'field_ramlisting_acres','fieldformat' => ''), //float
+'key21' => array('fieldname'=>'field_ramlisting_acreage','fieldformat' => ''), //float
 'key22' => array('fieldname'=>'field_ramlisting_ppacre','fieldformat' => ''), //int(11)
 'key23' => array('fieldname'=>'field_ramlisting_units','fieldformat' => ''), //int(11)
 'key24' => array('fieldname'=>'field_ramlisting_agentid','fieldformat' => ''), //int(11)
@@ -135,7 +135,7 @@ $field_map = array(
 //'key67' => array('fieldname'=>'field_ramlisting_officeid2','fieldformat' => 'number_integer'), //int(11) **deprecated
 //'key68' => array('fieldname'=>'field_ramlisting_officename2','fieldformat' => 'text'), //tinytext **deprecated
 //'key69' => array('fieldname'=>'field_ramlisting_officephone2','fieldformat' => 'text'), //varchar(30) **deprecated
-'imagesavailable' => 'field_ramlisting_images',	
+'imagesavailable' => array('fieldname'=>'field_ramlisting_imagesavail','fieldformat' => ''),
 );
 
 	
@@ -172,7 +172,7 @@ $custom_fields = array(
 
 'field_ramlisting_beds' => array(
 		'field_label'=>'Number of Bedrooms', 
-	  'field_type'=>'list_text', 
+	  'field_type'=>'list_integer', 
 		'allowed_values'=> $bedroom_options,
 		'widget_type'=> 'options_select',),
 
@@ -486,6 +486,12 @@ $custom_fields = array(
 	'field_label'=>'Real Estate Owned',
 	'field_type'=>'text',
 	'widget_type'=>'text_textfield',), //varchar(30)
+	
+	
+'field_ramlisting_imagesavail' => array(
+	'field_label'=>'Image List',
+	'field_type'=>'text_long',
+	'widget_type'=>'text_textarea',), //varchar(30)
 
 	
 /* **deprecated
@@ -594,4 +600,5 @@ $custom_fields_delete = array(
 'field_ramlisting_foreclosure' => 'field_ramlisting_foreclosure', //varchar(30)
 'field_ramlisting_shortsale' => 'field_ramlisting_shortsale', //varchar(30)
 'field_ramlisting_reo' => 'field_ramlisting_reo',
+'field_ramlisting_imagesavail' => 'field_ramlisting_imagesavail',
 );	

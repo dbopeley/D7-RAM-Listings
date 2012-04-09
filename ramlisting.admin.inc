@@ -156,6 +156,10 @@ function ramlisting_admin_settings_submit($form, &$form_state) {
 		}
 	}
 	*/
+	
+	
+	menu_cache_clear_all();
+	menu_rebuild();
 }
 
 

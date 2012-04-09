@@ -1,8 +1,10 @@
 name = "RAM Listings"
 description = "RAM MLS Administration"
+dependencies[] = location
+dependencies[] = location_node
 core = "7.x"
-package = "RAM"
-version = "7.x-1.0-beta4"
+package = "RAM MLS"
+version = "7.x-1.0"
 project = "ramlisting"
-dependencies[] = "location"
+
 
