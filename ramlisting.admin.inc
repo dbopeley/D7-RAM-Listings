@@ -71,6 +71,25 @@ $curfilescopy .= "<br /><b>$curconfigfile</b><br /><br />";
     '#weight'         => 20
   );
   
+  
+  	$form['ramlisting_feedback_level'] = array(
+    '#type'             => 'select',
+    '#title'            => t('Feedback'),
+    '#description'      => t('Set the level of reporting. The higher settings result in more verbose watchdog and system messaging. Higher settings are recommended for testing/configuration after initial installation. Once properly configured this setting should be lowered to reduced processign overhead.'),
+    '#options'          => array(0=>'none',1=>'low',2=>'medium',3=>'high'),
+    '#default_value'    => variable_get('ramlisting_feedback_level', 1),
+    '#weight'         => 30
+  );
+  
+ $cron_enabled = variable_get('ramlisting_cron_enable', FALSE);
+  $form['ramlisting_cron_enable'] = array(
+      '#type' => 'checkbox', 
+      '#title' => t('Enable updates on cron'), 
+      '#default_value' => !empty($cron_enabled) ? $cron_enabled : FALSE, 
+      '#description' => t('Checking this box will enable listing updates to be performed on cron runs'),
+      '#weight'         => 40
+    );
+  
 	
 	
 	$form['#validate'][] = 'ramlisting_admin_settings_validate' ;

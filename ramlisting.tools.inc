@@ -39,7 +39,7 @@ function ramlisting_admin_tools($form, $form_state) {
   $form['ramlisting_tools']['purgelink'] = array(
   '#prefix'       => '<div style="border:solid 1px #000000;padding:5px;margin-bottom:10px;">'.t('Completely purge currently configured mls settings.').'<br />',
     '#markup'       => $purgelink,
-    '#suffix'       => '</div>',
+    '#suffix'       => '<br /><div style="font-size:10px;line-height:12px;">OMG something has gone horribly wrong. Use the above command to completely remove the current configuration file and related settings. While \'Purge Current MLS\' will remove all created ramlisting nodes, previously uploaded images are not removed and are still available in the ramlisting/images/ directory</div></div>',
   );
 
   $form['ramlisting_tools_fs'] = array(

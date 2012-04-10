@@ -350,4 +350,6 @@ function ramlisting_uninstall() {
   variable_del('ramlisting_last_updated_mlsnum');
   variable_del('ramlisting_update_offset');
 	variable_del('ramlisting_connection_string');
+	variable_del('ramlisting_feedback_level');
+	variable_del('ramlisting_cron_enable');
 }
