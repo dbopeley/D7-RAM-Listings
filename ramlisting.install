@@ -24,13 +24,13 @@ function ramlisting_install() {
   // create the content type
   node_type_save($content_type);
 
- variable_set('node_options_ramlisting', array('status'));
+ 	variable_set('node_options_ramlisting', array('status'));
   // hide comments for this node. http://api.drupal.org/api/drupal/modules--comment--comment.module/7
- variable_set('comment_ramlisting', 'COMMENT_NODE_HIDDEN');
+ 	variable_set('comment_ramlisting', 'COMMENT_NODE_HIDDEN');
 
   // Hide date and author information
- variable_set('node_submitted_ramlisting', FALSE);
-
+ 	variable_set('node_submitted_ramlisting', FALSE);
+	variable_set('ramlisting_alias_path', 'listing'); 
   // Create all the fields we are adding to our content type.
   // http://api.drupal.org/api/function/field_create_field/7
   foreach (_ramlisting_installed_fields() as $field) {
@@ -352,4 +352,5 @@ function ramlisting_uninstall() {
 	variable_del('ramlisting_connection_string');
 	variable_del('ramlisting_feedback_level');
 	variable_del('ramlisting_cron_enable');
+	variable_del('ramlisting_alias_path'); 
 }

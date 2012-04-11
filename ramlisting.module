@@ -126,7 +126,12 @@ function ramlisting_menu() {
     'type' =>  MENU_CALLBACK,
   );
   
-  
+     $items['admin/config/content/ramlisting/reset-que'] = array(
+    'title' => 'Reset Que',
+    'page callback' => 'ramlisting_reset_que',
+    'access arguments' => array('administer ramlisting'),
+    'type' =>  MENU_CALLBACK,
+  );
    $items['admin/config/content/ramlisting/purge'] = array(
     'title' => 'Purge Listings',
     'page callback' => 'ramlisting_purge_all',
@@ -274,7 +279,7 @@ function ramlisting_execute_update($is_cron = false)
 
 
 /**
- * triggers importing RAM MLS data.
+ * triggers importing RAM MLS data for a single MLS Number.
  *
  * @param $mlsnum
  * 
@@ -284,9 +289,7 @@ function ramlisting_execute_listing_update($mlsnum)
 	
 	$domain = $_SERVER['SERVER_NAME'];
 	$ip = $_SERVER['SERVER_ADDR'];
-
 	include_once(RAMLISTING_MODULE_PATH. '/class.ram.php' );
-	
 	$postdata = array();
 	$postdata['input'] = "<?xml version='1.0' encoding='UTF-8' ?>
 						<rss version='2.0'>
@@ -296,43 +299,62 @@ function ramlisting_execute_listing_update($mlsnum)
 								<key1>$mlsnum</key1>
 							</search>
 						</rss>";
-		
-
 	$mls_connection_string = variable_get('ramlisting_connection_string', 'http://aspen.interactiveproperties.com/aspenAPI.php' );
 	$mls_image_base = variable_get('ramlisting_image_base', null );
 	$mls_region_id = variable_get('ramlisting_region_id', 'aspen' );
-	
 	// instantiate new Ram 
 	$ram = new Ram( $mls_connection_string, $mls_image_base, $mls_region_id );
-	
 	// request and return mls listings from postdata configured above
 	$listings = $ram->getUpdateResults($postdata);
-
 	
+
 	if(count($listings) == 0){
 		drupal_set_message(t("It appears !mn is not a valid MLS number. Please enter a valid MLS number of the listing you wish to update or import.", array('!mn' => '<b>'.$mlsnum.'</b>')), 'warning');
 		return;
 	}else{
-		
-		
-		
-		//loop listings returned form RAM 
-		foreach ($listings as $mlsnum => $listing) {
-			
+		//loop listings returned from RAM 
+		foreach ($listings as $lmlsnum => $listing) {
 			//quick check to see if a ramlisting node already exists with the listings MLS num as node title
-			$row = db_query('SELECT nid FROM node WHERE title = :mlsnum', array(':mlsnum' => $mlsnum))->fetchField();
+			$row = db_query('SELECT nid FROM node WHERE title = :mlsnum', array(':mlsnum' => $lmlsnum))->fetchField();
 			
-	
+		
+			
 			if(!isset($row)) {
+				
+		
+			
 			//no existing ramlisting node with mls number as title SO do insert
-	
-					$createdlisting = ramlisting_create_new_listing($listing);
-	
+				$createdlisting = ramlisting_create_new_listing($listing);
+				//feedback routine
+				$feedback = variable_get('ramlisting_feedback_level', 1);
+				if($feedback > 0){
+					if($createdlisting){
+						ramlisting_logit('new_listing', $createdlisting);
+					}else{
+						ramlisting_logit('failed_new_listing', $listing);
+					}
+				} //end feedback routine
 			} else {
+				
+			
 			//we found an existing ramlisting node SO do update
+				$nid = $row; ;
+				$updatedlisting = ramlisting_update_listing($listing, $nid);
+				
+				
+				
+				//feedback routine
+				$feedback = variable_get('ramlisting_feedback_level', 1);
+				if($feedback > 0){
+					if($updatedlisting){
+						
 					
-					$nid = $row; ;
-					$updatedlisting = ramlisting_update_listing($listing, $nid);
+						ramlisting_logit('updated_listing', $updatedlisting);
+					}else{
+						
+						ramlisting_logit('updated_listing_nochange', $mlsnum);
+					}
+				} //end feedback routine
 			}
 			//log mls number of last property imported or updated
 			$lastupdated_mlsnum = $listing['title'];
@@ -349,14 +371,14 @@ function ramlisting_execute_listing_update($mlsnum)
  */
 function ramlisting_create_new_listing($listing){
 	
-	kpr($listing);
 	include(RAMLISTING_CONFIG_PATH . '/aspen.config.inc');
 	$listingnode = new stdClass();
   $listingnode->type = 'ramlisting';
   $listingnode->title    = $listing['title'];
   $listingnode->language = LANGUAGE_NONE;
-  $listingnode->uid = 1; 
-  $path = 'listing/'.$listing['title'];
+  $listingnode->uid = 1;
+  $alias = variable_get('ramlisting_alias_path', 'listing');  
+  $path = $alias.'/'.$listing['title'];
   $listingnode->path = array('alias' => $path);
   node_object_prepare($listingnode);
   $fieldfilter = array('title','field_ramlisting_images');
@@ -411,8 +433,7 @@ function ramlisting_create_new_listing($listing){
 	 		}
  		}
  	}
-
-  // premptive stirke on creation of location data
+  // premptive strike on creation of location data
   $locationsvalues = array();
   $locationsconfig = array(
   'field_ramlisting_address'=>'street', 
@@ -422,40 +443,43 @@ function ramlisting_create_new_listing($listing){
   'field_ramlisting_lat'=>'latitude',
  	'field_ramlisting_lon'=>'longitude', 
   );
-  
-  
   foreach ($locationsconfig as $listingfield => $locationfield) {
   	if(array_key_exists($listingfield, $listingnode)){
   		$locationsvalues[0][$locationfield] = $listing[$listingfield]['fieldvalue'];
   	}
   }
- 
   // save the new listing node
   node_save($listingnode);
-	
-  //if the node saved then we can add location
+  //if the node saved then we can add location data
   if($listingnode->nid){
   	$criteria = array(
 			'nid' => $listingnode->nid,
 			'vid' => $listingnode->vid,
 			'genid' => 'ramlisting',
   	);
-  	
   	location_save_locations( $locationsvalues , $criteria );
-  	
   	return $listingnode;
   }else{
   	return false;
   }
-  
 }
 
 function ramlisting_update_listing($listing, $nid){
 	//step 1 load the listing node we are going to update
 	$listingnode = node_load($nid);
 	
+	
+	
 	//throw current value for imagesavailable in to a str and an array for later use
-	$currentimage_string = $listingnode->field_ramlisting_imagesavail[$listingnode->language][0]['value'];
+	
+	$listingnode_imagesavail_array = $listingnode->field_ramlisting_imagesavail;
+	if(array_key_exists('und',$listingnode_imagesavail_array)){
+		$currentimage_string = $listingnode_imagesavail_array['und'][0]['value'];
+	}else{
+		$currentimage_string ='';
+	}
+	
+	//$currentimage_string = $listingnode->field_ramlisting_imagesavail['und'][0]['value'];
 	$currentimage_array = explode('-',$currentimage_string);
 	
 	//set an array of fields not to update in listing field loop below
@@ -464,6 +488,7 @@ function ramlisting_update_listing($listing, $nid){
 	$updateimages = FALSE;
 	$doupdate = FALSE;
 	$log='';
+
 	//loop through listing data fields and flag to update when changed values are found
   foreach ($listing as $fieldname => $fieldcontents) {
   
@@ -485,7 +510,7 @@ function ramlisting_update_listing($listing, $nid){
 			//compare existing value to value from imported listing field	
 			if($curval != $fieldcontents['fieldvalue']){
 				
-				$log .= $fieldname.' :['.$curval.' >> '.$fieldcontents['fieldvalue'].']';
+				$log .= $fieldname.' :['.$curval.'] >> ['.$fieldcontents['fieldvalue'].']<br />';
 				//something changed so set a flag to proceed with update and add the updated listing field value to listingnode to save
 				$doupdate = TRUE;	
 				
@@ -511,29 +536,31 @@ function ramlisting_update_listing($listing, $nid){
 			}
 		}
  	}
-
+	
 	if(array_key_exists('field_ramlisting_imagesavail',$listing)) {
 		if($listing['field_ramlisting_imagesavail']['fieldvalue']  != ''){
-		
-			$importimagesavail = $listing['field_ramlisting_imagesavail']['fieldvalue'];
-			$curimagesavail = $listingnode->field_ramlisting_imagesavail['und'][0]['value'];
-
-			if($importimagesavail != $curimagesavail){  //ok something has changed in the available images fed to us fom RAM
 			
-				$log .= 'field_ramlisting_imagesavail: ['.$curimagesavail.' >> '.$importimagesavail.']<br />';
+			$importimagesavail = $listing['field_ramlisting_imagesavail']['fieldvalue'];
+			//check to see if availableimages has changed fed to us fom RAM
+			if($importimagesavail != $currentimage_string){  
+				
+				// start compiling a log var
+				//$imagelog .= 'field_ramlisting_imagesavail: ['.$currentimage_string.'] >> ['.$importimagesavail.']<br />';
+				// flag process to eventually save the node with changes below
 				$doupdate = TRUE;
 				
-				$imageimport_array = explode('-',$importimagesavail);
-				$imagecur_array = explode('-',$curimagesavail);
 				
-				//unset indices with 'thumb' in both import and currnet image arrays
+				//these next few lines get rid of bothersome references to thumbs which we do not use
+				$imageimport_array = explode('-',$importimagesavail);
+				$imagecur_array = $currentimage_array;
+				
+				//unset indices with 'thumb' in both import and currentt image arrays
 				foreach ($imageimport_array as $k => $iimg) {
 					if(strpos($iimg, 'thumb') !== false) {
 						unset($imageimport_array[$k]);
 					  $imageimport_array = array_values($imageimport_array);
 					}
 				}
-				
 				foreach ($imagecur_array as $k => $cimg) {
 					if(strpos( $cimg, 'thumb') !== false) {
 						unset($imagecur_array[$k]);
@@ -541,20 +568,26 @@ function ramlisting_update_listing($listing, $nid){
 					}
 				}
 				
-
-				
+	
+				//...now we have two neat arrays the reference images that are current and images from import that have changed
 				$ctr = 0;
 				// Loop through the update image array
 				foreach ($imageimport_array as $image) {
-
-					if($image != $imagecur_array[$ctr]){  // if the images in matching indices in both arrays == then do nuthin
-						//figure out if image already exists
-						//	kpr($image);
+					
+					// failsafe to ensure no error if indec $ctr even exists in $imagecur_array
+					if (array_key_exists($ctr, $imagecur_array)) {
+						$curimg = $imagecur_array[$ctr];
+					}else{
+						$curimg = '';
+					}
+					
+					
+					if($image != $curimg){  // if the images in matching indices in both arrays == then do nuthin
+					//figure out if image already exists
+					//kpr($image);
 					//kpr($imagecur_array[$ctr]);
+						// Figure out if the image we are currently referencing in this iteration has already been uploaded previously
 						$image_existing = ramlisting_find_image($image);
-						
-						//kpr($image_existing);
-						
 						
 						if(is_object($image_existing)){ //existing image so use it
 								$image_existing->display = 1;
@@ -575,7 +608,7 @@ function ramlisting_update_listing($listing, $nid){
 			}
 		}
 	}
-	
+
 	//feedback routine
 	$feedback = variable_get('ramlisting_feedback_level', 1);
 	if($feedback > 2){
@@ -635,7 +668,6 @@ function ramlisting_find_image($image) {
  			//$file->filepath = drupal_realpath($file->uri);
   		$existingmanagedimage = file_get_contents($uri);
   		$newmanagedimage = file_save_data($existingmanagedimage, $uri, FILE_EXISTS_REPLACE);
-  		kpr($newmanagedimage);
   		return $newmanagedimage;
 		}else{
 			return false;
@@ -740,6 +772,18 @@ function ramlisting_purge_all() {
 }
 
 
+/**
+ *
+ */
+function ramlisting_reset_que() {
+
+variable_set('ramlisting_update_offset', 0);
+  
+  $options = array('fragment' => 'overlay=admin/config/content/ramlisting/tools');
+	drupal_goto('admin/config/content/ramlisting/tools', $options);
+}
+
+
 function ramlisting_logit($action, $item) {
 		
 	$feedback = variable_get('ramlisting_feedback_level', 1);
@@ -761,22 +805,24 @@ function ramlisting_logit($action, $item) {
 			break;
 		case 'updated_listing':
 			$mlsnum = $item->title;
-			$path = $item->path['alias'];
+			//$path = $item->path['alias'];
 			if($feedback > 0){
 				$mlsnum = $item->title;
-				$message = 'Listing '.$mlsnum.' updated successfully. '. l('view listing', $path);
+				$message = 'Listing '.$mlsnum.' updated successfully. ';
 				drupal_set_message($message, 'status', TRUE);
 			}
 			
-			watchdog('ramlisting', 'Listing %mls updated successfully.', array('%mls' => $mlsnum), WATCHDOG_NOTICE, l('view listing', $path));
+			watchdog('ramlisting', 'Listing %mls updated successfully.', array('%mls' => $mlsnum), WATCHDOG_NOTICE);
 			
 			
 			break;
 			
 		case 'updated_listing_nochange':
-			
-			watchdog('ramlisting', 'Listing %mls no change.', array('%mls' => $mlsnum), WATCHDOG_NOTICE, l('view', $path));
+			$message = 'Listing '.$item.' no change. '. $item;
+			drupal_set_message($message, 'status', TRUE);
+			watchdog('ramlisting', 'Listing %mls no change.', array('%mls' => $item), WATCHDOG_NOTICE);
 			break;
+		
 		case 'failed_updated_listing':
 			
 			

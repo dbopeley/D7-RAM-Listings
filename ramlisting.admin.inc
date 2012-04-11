@@ -81,7 +81,7 @@ $curfilescopy .= "<br /><b>$curconfigfile</b><br /><br />";
     '#weight'         => 30
   );
   
- $cron_enabled = variable_get('ramlisting_cron_enable', FALSE);
+ 	$cron_enabled = variable_get('ramlisting_cron_enable', FALSE);
   $form['ramlisting_cron_enable'] = array(
       '#type' => 'checkbox', 
       '#title' => t('Enable updates on cron'), 
@@ -89,6 +89,16 @@ $curfilescopy .= "<br /><b>$curconfigfile</b><br /><br />";
       '#description' => t('Checking this box will enable listing updates to be performed on cron runs'),
       '#weight'         => 40
     );
+    
+  $alias = variable_get('ramlisting_alias_path', 'listing'); 
+ 	$form['ramlisting_alias_path'] = array(
+      '#type' => 'textfield', 
+      '#title' => t('Listing Path'), 
+      '#default_value' => !empty($alias) ? $alias : 'listing', 
+      '#description' => t('Values enter here will define the default path alias to the listing node in the form of /[value]/[mlsnumber]'),
+      '#weight'         => 50
+    );
+  
   
 	
 	

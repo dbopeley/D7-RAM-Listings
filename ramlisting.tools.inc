@@ -19,20 +19,23 @@ function ramlisting_admin_tools($form, $form_state) {
   );
   
   $lastupdated = 	variable_get('ramlisting_last_updated_mlsnum', 0);
-   $curoffset = 	variable_get('ramlisting_update_offset', 0);
-
-	$updatelink = 'Last updated MLS Listing: '.$lastupdated.'<br />';
-	$updatelink .= 'Current Update Offset: '.$curoffset.'<br />';
-	$destination = drupal_get_destination();
+  $curoffset = 	variable_get('ramlisting_update_offset', 0);
+  $destination = drupal_get_destination();
   $linkattributes = array(
   										'query' => array($destination),
   										'attributes' => array('class' => 'refresh-link',)
   										);
+	$updatelink = 'Last updated MLS Listing: '.$lastupdated.'<br />';
+	$resetlink = l('(reset)', 'admin/config/content/ramlisting/reset-que', $linkattributes);
+	$updatelink .= 'Current Update Offset: '.$curoffset.'&nbsp;'.$resetlink.'<br />';
+
+
   $updatelink .= l('Execute Manual Import', 'admin/config/content/ramlisting/update', $linkattributes);
+  
   $form['ramlisting_tools']['updatelink'] = array(
     '#prefix'       => '<div style="border:solid 1px #000000;padding:5px;margin-bottom:10px;">',
     '#markup'       => $updatelink,
-      '#suffix'       => '</div>',
+    '#suffix'       => '</div>',
   );
   
     $purgelink = l('Purge Current MLS', 'admin/config/content/ramlisting/purge', $linkattributes);
