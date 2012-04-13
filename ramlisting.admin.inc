@@ -158,6 +158,10 @@ function ramlisting_admin_settings_submit($form, &$form_state) {
   		variable_set('ramlisting_mlsarea', $config['area']);
   		variable_set('ramlisting_connection_string', $config['conx']);
   		variable_set('ramlisting_customfields_delete',$custom_fields_delete);
+  		
+  		if($field_conversions){
+  			variable_set('ramlisting_field_conversions',$field_conversions);
+  		}
 
 			$fieldscreated = ramlisting_create_fields($custom_fields);
 

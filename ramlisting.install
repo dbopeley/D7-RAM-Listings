@@ -336,7 +336,7 @@ function ramlisting_uninstall() {
   // http://api.drupal.org/api/function/node_type_delete/7
   node_type_delete('ramlisting');
 
-  // Purge all field infromation
+  // Purge all field information
   // http://api.drupal.org/api/function/field_purge_batch/7
   field_purge_batch(1000);
 

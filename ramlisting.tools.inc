@@ -33,16 +33,42 @@ function ramlisting_admin_tools($form, $form_state) {
   $updatelink .= l('Execute Manual Import', 'admin/config/content/ramlisting/update', $linkattributes);
   
   $form['ramlisting_tools']['updatelink'] = array(
-    '#prefix'       => '<div style="border:solid 1px #000000;padding:5px;margin-bottom:10px;">',
+    '#prefix'       => '<div style="border:solid 1px #000000;padding:5px;margin-bottom:10px;"><b>Manual Listing Import</b><br />',
     '#markup'       => $updatelink,
     '#suffix'       => '</div>',
   );
   
-    $purgelink = l('Purge Current MLS', 'admin/config/content/ramlisting/purge', $linkattributes);
+  
+  
+  $listingresult = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'ramlisting'")->fetchAssoc();
+  $listingcount = $listingresult['count(*)'];
+	$prefix = 'There are currently '.$listingcount.' listing nodes in the system.<br />';
+	
+  $purgelistingslink = l('Delete Listings', 'admin/config/content/ramlisting/purge-listings', $linkattributes);
+  
+  $form['ramlisting_tools']['purgelistingslink'] = array(
+  '#prefix'       => '<div style="border:solid 1px #000000;padding:5px;margin-bottom:10px;"><b>'.t('Delete RAM Listing Nodes').'</b><br />'.$prefix,
+    '#markup'       => $purgelistingslink,
+    '#suffix'       => '<br /><div style="font-size:10px;line-height:12px;"><b>PLEASE NOTE:</b> Clicking this link will remove RAM listing nodes in batches of 100 to prevent server timeouts and memory overloads. This may require multiple invocations before all RAM listing nodes are removed. All listing nodes must be deleted prior to uninstalling this module.<br /><span style="color:#ff0000;">WARNING:</span> Invoking RAM listing node deletion here will also remove image files associated to the deleted nodes.</div></div>',
+  );
+  
+
+	
+	if($listingcount == 0){
+		$purgelinkattributes = array(
+			'attributes' => array('class' => 'refresh-link',)
+		);
+		$purgelink = l('Purge Current MLS', 'admin/config/content/ramlisting/purge', $purgelinkattributes);
+	}else{
+		
+		$purgelink = 'All existing RAM Listing nodes must first be removed prior to purging the currently configured MLS. See <b>Delete RAM Lisitng Nodes</b> above.';
+	}
+  
+  
   $form['ramlisting_tools']['purgelink'] = array(
-  '#prefix'       => '<div style="border:solid 1px #000000;padding:5px;margin-bottom:10px;">'.t('Completely purge currently configured mls settings.').'<br />',
+  '#prefix'       => '<div style="border:solid 1px #000000;padding:5px;margin-bottom:10px;"><b>'.t('Purge Currently Configured MLS.').'</b><br />',
     '#markup'       => $purgelink,
-    '#suffix'       => '<br /><div style="font-size:10px;line-height:12px;">OMG something has gone horribly wrong. Use the above command to completely remove the current configuration file and related settings. While \'Purge Current MLS\' will remove all created ramlisting nodes, previously uploaded images are not removed and are still available in the ramlisting/images/ directory</div></div>',
+    '#suffix'       => '<br /><div style="font-size:10px;line-height:12px;"><b>PLEASE NOTE:</b> Purging the currently configured MLS will removed fields and field instance associated with the currently configured MLS. It does not removed the ramlisting node type nor the base field (mlsnum, address, city, state, etc etc) installed with the module.</div></div>',
   );
 
   $form['ramlisting_tools_fs'] = array(

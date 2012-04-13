@@ -522,8 +522,21 @@ $config = array(
     'area' => 'aspen'
   );
 
-
-
+///fucking RAM grrrrrrrrrr
+$field_conversions = array(
+'field_ramlisting_beds' => array(
+	'Studio'=>0,
+	'One' => 1,
+	'Two' => 2,
+	'Three' => 3,
+	'Four' => 4,
+	'Five' => 5,
+	'Six' => 6,
+	'Seven' =>7,
+	'Eight' => 8,
+	'Nine Or More' => 9,
+	),
+);
 
 $custom_fields_delete = array(
 'field_ramlisting_class' => 'field_ramlisting_class', //varchar(50)
